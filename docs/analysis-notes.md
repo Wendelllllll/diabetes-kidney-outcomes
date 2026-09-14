@@ -1,8 +1,9 @@
 # Analysis preparation notes
 
 The repository contains two cleaned versions of the original MED264 notebooks.
-The README will be written separately with the author. No license has been
-selected yet. This is exploratory observational analysis, not a clinical claim.
+See the repository README for a project overview and synthetic demo instructions.
+No license has been selected yet. This is exploratory observational analysis,
+not a clinical claim.
 
 ## Preparation changes
 
