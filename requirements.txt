@@ -13,4 +13,3 @@ tqdm>=4
 ipywidgets>=8,<9
 jupyterlab>=4,<5
 nbformat>=5,<6
-
