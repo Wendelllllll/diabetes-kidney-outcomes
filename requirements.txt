@@ -1,0 +1,16 @@
+# Candidate environment; restricted-data notebooks have not been rerun.
+pandas>=2.0,<3
+numpy>=1.24,<3
+statsmodels>=0.14,<0.15
+matplotlib>=3.7,<4
+seaborn>=0.12,<0.14
+matplotlib-venn>=0.11,<2
+pandas-gbq>=0.19,<1
+google-cloud-bigquery-storage>=2,<3
+pyarrow>=12
+db-dtypes>=1
+tqdm>=4
+ipywidgets>=8,<9
+jupyterlab>=4,<5
+nbformat>=5,<6
+
