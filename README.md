@@ -1,44 +1,55 @@
 # Kidney Outcomes in Type 2 Diabetes
 
-Exploring kidney-function changes among patients exposed to **SGLT2 inhibitors** or **GLP-1 receptor agonists**, using electronic health records from the **All of Us Research Program**.
+I worked on this project for MED264 at UC San Diego to compare kidney-function changes in adults with type 2 diabetes receiving SGLT2 inhibitors or GLP-1 receptor agonists. The study used electronic health records from the All of Us Research Program.
 
-Developed independently as a MED264 course project at UC San Diego, this analysis connects cohort construction, medication and laboratory data processing, and statistical modeling of repeated kidney-function measurements.
+The analysis covered two questions: how long patients took to reach a decline in estimated glomerular filtration rate (eGFR), and how eGFR changed across repeated measurements.
 
-**Project status:** The repository contains cleaned analysis code and a runnable synthetic demonstration. The restricted-data notebooks have received preprocessing corrections but have not been rerun on the original data. No updated clinical findings are reported here.
+## Study and methods
 
-## Research question
+The final research report describes a cohort of **1,197 patients**: 803 in the GLP-1RA group and 394 in the SGLT2i group. Patients recorded as receiving both drug classes were excluded.
 
-How do changes in estimated glomerular filtration rate (eGFR), a measure of kidney function, differ between adults with type 2 diabetes exposed to SGLT2 inhibitors and those exposed to GLP-1 receptor agonists?
+- **Cohort preparation:** SQL queries and Python processing linked demographic, medication, laboratory, and diagnosis records.
+- **Survival analysis:** Cox proportional hazards models assessed time to a 20% decline in eGFR, with a 40% decline as an additional endpoint, within two years of treatment initiation. The report also includes Kaplan–Meier curves and cumulative hazard plots.
+- **Longitudinal analysis:** A linear mixed-effects model used patient-level random intercepts and treatment-by-time interactions, with adjustment for demographic and comorbidity variables. Pre-treatment observations served as the reference treatment status.
 
-The analyses examine changes from baseline and indicators of at least a 20% or 40% decline in eGFR. A longitudinal model also examines repeated measurements within patients.
+The survival-results section reports **1,141 patients** for the 20% endpoint. The report does not fully explain the reduction from the overall cohort, so these counts are kept separate here.
 
-## Analysis workflow
+## Reported results
 
-1. **Extract records:** Query person, drug exposure, measurement, and condition tables from the All of Us Registered Tier Dataset v7 using SQL.
-2. **Build the cohort:** Classify medications into the two drug classes and select patients observed with only one of those classes in the extracted records.
-3. **Align measurements:** Calculate time relative to each patient's first observed drug exposure and identify baseline and follow-up eGFR measurements.
-4. **Prepare covariates:** Merge demographic characteristics and comorbidity indicators with the kidney-function data.
-5. **Explore outcomes:** Fit linear regressions for eGFR change and logistic regressions for decline indicators; examine baseline-function subgroups and follow-up timing.
-6. **Model repeated measurements:** Fit a patient-level random-intercept model with time, treatment status, demographics, and comorbidities as fixed effects.
+The final report gives the following treatment comparisons, with GLP-1RA as the reference:
 
-The endpoint analysis targets a measurement near 156 weeks. The longitudinal notebook includes measurements before and after first observed exposure; it does not enforce the same three-year follow-up window.
+| Endpoint | Hazard ratio for SGLT2i | 95% confidence interval | p-value |
+| --- | --- | --- | --- |
+| 20% decline in eGFR | 1.44 | 0.98–2.11 | 0.0612 |
+| 40% decline in eGFR | 1.92 | 0.89–4.13 | 0.0976 |
 
-## Repository contents
+Neither comparison met the study's 0.05 significance threshold. This does not establish equivalence between treatments.
 
-| File | Purpose |
+The longitudinal model reported a more negative treatment-by-time coefficient for SGLT2i. A direct statistical comparison between the two slopes is not provided in the report. Time was standardized, so these coefficients should not be described as annual rates of decline.
+
+These are results recorded in the final report, not results regenerated from this repository. The study is observational; treatment selection, missing prescription records, and uneven follow-up limit causal interpretation.
+
+## What is in this repository
+
+The available notebooks are earlier local versions. They cover data preparation and exploratory regression, but do not reproduce every analysis in the final report.
+
+| File | Contents |
 | --- | --- |
-| [01_cohort_and_regression.ipynb](notebooks/01_cohort_and_regression.ipynb) | Data extraction, cohort preparation, exploratory summaries, linear and logistic regressions |
-| [02_longitudinal_mixed_effects.ipynb](notebooks/02_longitudinal_mixed_effects.ipynb) | Data preparation and mixed-effects modeling of repeated eGFR measurements |
-| [synthetic_demo.py](scripts/synthetic_demo.py) | Local modeling example using entirely artificial data |
-| [check_notebooks.py](scripts/check_notebooks.py) | Checks notebook syntax and absence of saved outputs, execution state, and attachments |
-| [analysis-notes.md](docs/analysis-notes.md) | Preparation changes, execution guidance, and detailed methodological limitations |
-| [requirements.txt](requirements.txt) | Candidate dependencies for the notebooks and demo |
+| [Cohort and regression notebook](notebooks/01_cohort_and_regression.ipynb) | SQL extraction, cohort preparation, linear and logistic regressions |
+| [Mixed-effects notebook](notebooks/02_longitudinal_mixed_effects.ipynb) | Earlier random-intercept model with a shared time slope |
+| [Analysis notes](docs/analysis-notes.md) | Differences between the report and available code, corrections, and open checks |
+| [Synthetic demo](scripts/synthetic_demo.py) | Small example using entirely artificial data |
+| [Notebook checker](scripts/check_notebooks.py) | Source syntax and saved-output checks |
 
-**Tools:** Python, SQL/BigQuery, pandas, NumPy, statsmodels, Matplotlib, Seaborn, and Jupyter.
+The final report names `survival.ipynb` in the All of Us workspace as the survival-analysis source. That file and the final mixed-effects implementation have not yet been recovered. The model in the current mixed-effects notebook has no treatment-by-time interaction.
 
-## Run the synthetic demonstration
+**Tools used in the study:** SQL/BigQuery, Python, pandas, NumPy, statsmodels, and R's survival and survminer packages. The R survival code is not included here.
 
-No All of Us account or participant data is needed for this example. From the repository directory, using Python 3.11 or newer:
+## Running the code
+
+The research notebooks require an authorized All of Us Researcher Workbench with access to Registered Tier v7. Queries read the `WORKSPACE_CDR` environment variable. Review [requirements.txt](requirements.txt) against that environment before running either notebook from the beginning. Dependency ranges are not a verified lockfile.
+
+For a local demonstration without participant data:
 
 ```sh
 python3 -m venv .venv
@@ -47,41 +58,12 @@ python -m pip install "numpy>=1.24,<3" "pandas>=2.0,<3" "statsmodels>=0.14,<0.15
 python scripts/synthetic_demo.py
 ```
 
-On Windows, activate the environment with `.venv\Scripts\activate` in Command Prompt instead.
+The demo generates artificial repeated measurements and fits a random-intercept model with a treatment-by-time interaction. It illustrates the model structure; it does not reproduce the study's data, estimates, or full adjustment set.
 
-The script generates 160 artificial participants with seven measurements each, fits a random-intercept model, and prints a model summary. A fixed random seed makes the generated data repeatable. All data and treatment-effect parameters are invented for demonstration; they are not derived from participant records.
+## Data and validation
 
-The demo includes a treatment-by-time interaction to illustrate different slopes. The original longitudinal notebook uses a common time slope, so the demo is a separate modeling illustration rather than a reproduction of that analysis.
+Participant data, individual trajectories, and saved research outputs are excluded. The full report is not reproduced here because its tables and figures need a separate disclosure review.
 
-## Run the research notebooks
+Notebook source checks run through GitHub Actions and can also be run with `python scripts/check_notebooks.py`. The synthetic demo has run successfully. The research notebooks have not been rerun after repository edits, and source checks do not validate the clinical analysis.
 
-The notebooks require an authorized **All of Us Researcher Workbench** environment with access to the referenced Registered Tier v7 data. Their generated queries use the `WORKSPACE_CDR` environment variable.
-
-Within that authorized environment, review [requirements.txt](requirements.txt) against the installed packages and run each notebook from top to bottom. Each notebook includes its own extraction and preparation steps. The dependency ranges are not a verified lockfile, and full notebook execution has not been validated following the corrections.
-
-Participant data and saved research outputs are not included. Keep participant-level processing inside the authorized Workbench; use the synthetic example for local exploration.
-
-## Interpretation and limitations
-
-This is an exploratory observational project. Treatment selection, baseline differences, and irregular follow-up can confound comparisons, so model coefficients should not be interpreted as causal treatment effects.
-
-- **Measurement timing:** The nearest baseline and endpoint measurements have no maximum distance requirement. Baseline can occur after initiation, and endpoint timing can vary substantially.
-- **Outcome definition:** Decline indicators compare two measurements rather than identifying the first threshold crossing. Medication-gap censoring is not active, and Cox survival analysis is not implemented.
-- **Longitudinal design:** The notebook labels pre-exposure records as `Untreated` and sets negative relative times to zero. Those records come from eventual treatment users, not an independent untreated cohort. The model does not estimate separate treatment-specific time slopes.
-- **Covariates and diagnostics:** Comorbidity definitions, diagnosis timing, demographic coding, and model stability require further review. Age currently uses a fixed historical reference date rather than age at initiation.
-
-During repository preparation, the intended three-year endpoint was corrected from 104 to 156 weeks, a heart-failure label mismatch was fixed, and execution-order problems were addressed. These changes can affect results. Historical figures and estimates are therefore not presented as findings of the corrected code. See the [analysis notes](docs/analysis-notes.md) for details.
-
-## Validation and data handling
-
-The synthetic example has been run successfully, and the notebook source checks run automatically through GitHub Actions. These checks do not execute the restricted-data analysis or validate its statistical conclusions.
-
-To run the source checks locally:
-
-```sh
-python scripts/check_notebooks.py
-```
-
-Executing the research notebooks can recreate participant-level tables, small subgroup summaries, and individual trajectories. Clear notebook outputs before committing and review any figures or aggregate results before sharing. The source checker is not a comprehensive privacy audit.
-
-Data access and dissemination are governed by the All of Us Research Program. Consult its [Data and Statistics Dissemination Policy](https://www.researchallofus.org/faq/data-and-statistics-dissemination-policy/) and [Publication and Presentation Policy](https://www.researchallofus.org/faq/publication-and-presentation-policy/).
+Clear outputs before sharing executed notebooks and follow the All of Us [Data and Statistics Dissemination Policy](https://www.researchallofus.org/faq/data-and-statistics-dissemination-policy/).

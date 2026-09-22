@@ -1,78 +1,48 @@
-# Analysis preparation notes
+# Analysis notes
 
-The repository contains two cleaned versions of the original MED264 notebooks.
-See the repository README for a project overview and synthetic demo instructions.
-No license has been selected yet. This is exploratory observational analysis,
-not a clinical claim.
+The final Google document titled *Research Report* was reviewed on September 22, 2026. Its full title is *Sodium-Glucose Cotransporter-2 Inhibitors versus Glucagon-Like Peptide 1 Receptor Agonists Effects on Kidney in Patients with Type 2 Diabetes from the All of Us Research Program*.
 
-## Preparation changes
+The report establishes the final study scope. The local notebooks establish what code is currently available. Neither has been treated as proof that the repository reproduces the final results.
 
-- Cleared all saved outputs, execution counts, attachments, and original metadata.
-- Removed workspace directory listings and ad hoc bucket transfers/CSV exports.
-- Added early pandas/NumPy imports and an explicit Researcher Workbench check.
-- Fixed use of `clean_dataset` before its initialization in the regression notebook.
-- Changed the intended three-year endpoint from 104 to 156 weeks.
-- Fixed the heart-failure label comparison: `heart failure` was compared with
-  `heart_failure`, producing an all-false indicator.
-- Fixed the age reference date at 2024-11-20 instead of the day of execution.
-  This preserves a historical reference date; age at treatment initiation remains
-  a future methodological correction.
+## Report and code comparison
 
-These changes can alter results. Original statistics and figures have not been
-carried forward as results of the corrected code. The original folder is intact.
-The proposal and workflow PDF are also omitted: their scope, authorship labels,
-and sample counts require reconciliation before reuse.
+| Item | Final report | Available notebooks |
+| --- | --- | --- |
+| Endpoint follow-up | Two years / 24 months | Target restored to 104 weeks; nearest measurement selected without a strict window |
+| Cohort size | 1,197 overall; 1,141 in the Event20 survival section | Historical outputs showed 1,471 in exploratory regression and 1,198 in the mixed model |
+| Survival analysis | Cox models, Kaplan–Meier curves, cumulative hazards | `survival.ipynb` is missing from the local files |
+| Longitudinal model | Random intercept plus treatment-by-time interactions | Earlier random-intercept model with a common time slope |
+| Longitudinal follow-up | Median approximately six months, range 0–2.4 years | Includes pre-treatment records; not restricted to a two-year window |
 
-## Remaining limitations
+The report's Code Availability section identifies `survival.ipynb` and `Hao's mix-effect mode.ipynb` in its All of Us workspace. The workspace requires a separate sign-in. The final source files have not been retrieved; no substitute survival code has been written.
 
-- Endpoint measurements are selected nearest 156 weeks without a maximum allowed
-  distance. Baseline is nearest initiation and can be after initiation. Neither
-  selection guarantees an appropriate baseline or follow-up window.
-- Medication-gap censoring is commented out. Event flags compare baseline and
-  endpoint values, rather than finding the first threshold crossing. Cox survival
-  analysis described in the original proposal is not implemented here.
-- The mixed-effects notebook includes pre-treatment records, calls those records
-  `Untreated`, and sets negative times to zero. This is not a separate untreated
-  cohort. The model uses a shared time slope, with no treatment-by-time interaction.
-- Comorbidity extraction uses name matching and does not restrict diagnoses to
-  baseline. Concept-set validation and temporal restrictions need review.
-- Models use gender while labeling some derived variables as sex; category
-  exclusions and simplified race coding need explicit justification.
-- Historical regressions showed numerical warnings and sparse predictors. Model
-  fitting and diagnostics must be revisited after preprocessing corrections.
-- Remaining exploratory branches remove predictors based on historical behavior;
-  those choices must be reconsidered after the heart-failure fix.
-- Confounding, treatment selection, and irregular follow-up limit interpretation.
+## Corrections to repository preparation
 
-## Execution
+The initial repository preparation changed `52*2` to `52*3` based on the older proposal's three-year plan. That was an incorrect interpretation of the final study design. Both notebooks now use `follow_up_weeks = 52 * 2`, and the misleading three-year variable name and comments have been replaced.
 
-For the two notebooks, use an authorized All of Us Researcher Workbench and
-Registered Tier v7 data. The generated SQL reads `WORKSPACE_CDR`. The dependency
-file is a candidate environment, not a verified lockfile. Run notebooks from top
-to bottom inside the authorized environment. Do not move participant data into
-this repository to make them runnable locally.
+Other preparation edits remain:
 
-For a local, entirely artificial modeling illustration:
+- Removed saved outputs, execution counts, original metadata, directory listings, and ad hoc data exports.
+- Added early pandas/NumPy imports and an explicit Workbench environment check.
+- Fixed use of `clean_dataset` before initialization.
+- Fixed the mismatch between `heart failure` and `heart_failure` in the comorbidity comparison.
+- Replaced execution-day age calculation with a fixed reference date of 2024-11-20. This is a repository convention, not confirmation of the final study's age definition. Age at initiation still needs review.
 
-```sh
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-python scripts/synthetic_demo.py
-```
+The original local files are unchanged. No participant-data analysis has been rerun after these edits, so historical estimates should not be attributed to the edited notebooks.
 
-The demo illustrates a random-intercept model and treatment-by-time interaction.
-It does not reproduce the cohort pipeline or results, and is not a replacement
-for validation on the original data.
+## Questions to resolve with the final source
 
-## Distribution
+1. **Cohort accounting.** Explain the transition from 1,197 to 1,141 and reconcile both with the older notebook counts. The report does not provide enough detail to assign a reason to each exclusion.
+2. **Event times and censoring.** The available code compares baseline and endpoint values. It does not locate the first threshold crossing, and medication-gap filtering is inactive. Recover the Cox code to verify event-time construction, censoring, covariates, and proportional-hazards diagnostics.
+3. **Longitudinal specification.** Recover the interaction model and its time-standardization definition. Pre-treatment observations belong to eventual treatment users, not a separate untreated cohort. A formal contrast is needed to test the difference between treatment-specific slopes; separate significant coefficients do not establish that contrast.
+4. **Sparse models.** The report's Event40 table includes zero/infinite estimates and unbounded confidence intervals for some covariates. Inspect convergence warnings and sparse-event behavior before relying on those estimates.
+5. **Report consistency.** The abstract repeats the SGLT2i interaction confidence interval for GLP-1RA; Table 4 instead gives -7.907 to -6.814 for GLP-1RA. A discussion sentence compares GLP-1RA with itself. The software section lists two R versions. These should be checked against original output, not silently resolved by guessing.
+6. **Measurement and covariate definitions.** Baseline timing, diagnosis timing, medication exposure, demographic coding, and age definition need reconciliation. The available code uses the measurement nearest initiation, whereas the report describes the first available baseline measurement.
 
-Run `python scripts/check_notebooks.py` before committing. It checks notebook
-syntax, saved outputs, execution state, and attachments; it is not a comprehensive
-privacy audit. Executing the original notebooks can recreate participant-level
-outputs, small subgroup summaries, and individual trajectories. Clear outputs
-before sharing and review any exported figures separately.
+## Sharing and reproducibility
 
-All of Us policies:
-- https://www.researchallofus.org/faq/data-and-statistics-dissemination-policy/
-- https://www.researchallofus.org/faq/publication-and-presentation-policy/
+Only selected aggregate treatment results are summarized in the README. The report contains small subgroup counts and an individual-trajectory figure; the document and those figures have not been copied into the repository.
+
+Keep participant-level processing inside the authorized All of Us environment. Clear outputs and inspect metadata before adding recovered notebooks. Run `python scripts/check_notebooks.py` before committing, but treat it as a source check rather than a full disclosure audit.
+
+The synthetic demo is a separate illustration with invented data and parameters. It is not evidence that the study can be reproduced from the files currently in this repository.
